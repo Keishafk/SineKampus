@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   },
 
   // Makes the image fill the whole poster box.
-  posterImage: { width: '100%', height: '100%' },
+  posterImage: { width: '100%', height: '100%'},
 
   posterFallback: {
     flex: 1,
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     // Half of the width/height makes a perfect circle.
     borderRadius: 15,
     // Semi-transparent dark background so the icon is readable on any poster.
-    backgroundColor: 'rgba(11, 15, 16, 0.6)',
+    backgroundColor: 'light green',
     justifyContent: 'center',
     alignItems: 'center',
   },

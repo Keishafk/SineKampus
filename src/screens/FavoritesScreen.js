@@ -38,7 +38,7 @@ export default function FavoritesScreen({ navigation, favoriteIds, toggleFavorit
     </View>
   );
 }
-
+ 
 const styles = StyleSheet.create({
   // paddingTop is the space above the heading, change it in theme.js
   screen: { flex: 1, backgroundColor: colors.background, paddingTop: layout.topPadding },

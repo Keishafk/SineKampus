@@ -18,8 +18,8 @@ export const films = [
     department: 'College of Computing and Information System',
     tags: ['new', 'winners2025'],
     description:
-      'A student discovers how technology can change the way people connect, learn, and understand the world.',
-    link: 'https://www.youtube.com/',
+      '',
+    link: '',
   },
 
   {
@@ -103,7 +103,7 @@ export const films = [
     id: '7',
     title: 'Even Sundays',
     poster: require('../../assets/posters/cat2024.jpg'),
-    genre: 'Action',
+    genre: 'Drama',
     year: 2024,
     department: 'College of Automotive and Technology',
     tags: ['new'],
@@ -168,9 +168,10 @@ export const films = [
     department: 'College of Criminal Justice',
     tags: ['new', 'winners2025'],
     description:
-      'Criminal justice students investigate a mysterious case that tests their knowledge, teamwork, and judgment.',
+      '.',
     link: '',
   },
+
 
   {
     id: '12',
@@ -198,7 +199,7 @@ export const films = [
     genre: 'Crime',
     year: 2025,
     department: 'College of Nursing',
-    tags: [],
+    tags: ['winners2025'],
     description:
       '',
     link: '',

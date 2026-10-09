@@ -18,8 +18,14 @@ const FILTERS = [
 export default function HomeScreen({ navigation, favoriteIds, toggleFavorite }) {
   // Text typed in the search bar
   const [query, setQuery] = useState('');
+
   // Chosen value for each filter (null means "All")
-  const [filters, setFilters] = useState({ genre: null, year: null, department: null });
+  const [filters, setFilters] = useState({
+    genre: null,
+    year: null,
+    department: null,
+  });
+
   // Which filter sheet is open ('genre', 'year', 'department', or null)
   const [openFilter, setOpenFilter] = useState(null);
 
@@ -31,7 +37,9 @@ export default function HomeScreen({ navigation, favoriteIds, toggleFavorite }) 
     const matchesSearch = f.title.toLowerCase().includes(query.toLowerCase());
     const matchesGenre = filters.genre === null || f.genre === filters.genre;
     const matchesYear = filters.year === null || f.year === filters.year;
-    const matchesDept = filters.department === null || f.department === filters.department;
+    const matchesDept =
+      filters.department === null || f.department === filters.department;
+
     return matchesSearch && matchesGenre && matchesYear && matchesDept;
   });
 
@@ -40,6 +48,7 @@ export default function HomeScreen({ navigation, favoriteIds, toggleFavorite }) 
     ...row,
     films: visibleFilms.filter((f) => (f.tags ?? []).includes(row.id)),
   }));
+
   // Adds the automatic "All films" row at the end
   sections.push({ id: 'all', title: 'All Films', films: visibleFilms });
 
@@ -47,11 +56,13 @@ export default function HomeScreen({ navigation, favoriteIds, toggleFavorite }) 
   const visibleSections = sections.filter((s) => s.films.length > 0);
 
   // Opens the details screen and sends this film's id
-  const openFilm = (film) => navigation.navigate('FilmDetails', { filmId: film.id });
+  const openFilm = (film) =>
+    navigation.navigate('FilmDetails', { filmId: film.id });
 
   return (
     // A plain View now, the top space comes from layout.topPadding in theme.js
     <View style={styles.screen}>
+
       {/* App name: "Sine" in white, "Kampus" in green */}
       <Text style={styles.logo}>
         Sine<Text style={styles.logoAccent}>Kampus</Text>
@@ -59,7 +70,12 @@ export default function HomeScreen({ navigation, favoriteIds, toggleFavorite }) 
 
       {/* Search bar */}
       <View style={styles.search}>
-        <Ionicons name="search" size={18} color={colors.textMuted} />
+        <Ionicons
+          name="search"
+          size={18}
+          color={colors.textMuted}
+        />
+
         <TextInput
           style={styles.searchInput}
           placeholder="Search campus short films"
@@ -69,11 +85,12 @@ export default function HomeScreen({ navigation, favoriteIds, toggleFavorite }) 
         />
       </View>
 
-      {/* Filter chips: one per filter, green when a value is chosen */}
+      {/* Filter chips: centered together in the middle of the screen */}
       <View style={styles.chips}>
         {FILTERS.map((f) => {
           const value = filters[f.key];
           const active = value !== null;
+
           return (
             <Pressable
               key={f.key}
@@ -81,8 +98,15 @@ export default function HomeScreen({ navigation, favoriteIds, toggleFavorite }) 
               onPress={() => setOpenFilter(f.key)}
             >
               {/* Shows the chosen value, or the filter name if none */}
-              <Text style={styles.chipText}>{active ? String(value) : f.label}</Text>
-              <Ionicons name="chevron-down" size={14} color={colors.text} />
+              <Text style={styles.chipText}>
+                {active ? String(value) : f.label}
+              </Text>
+
+              <Ionicons
+                name="chevron-down"
+                size={14}
+                color={colors.text}
+              />
             </Pressable>
           );
         })}
@@ -103,7 +127,9 @@ export default function HomeScreen({ navigation, favoriteIds, toggleFavorite }) 
 
         {/* Shown when no film matches the search or filters */}
         {visibleFilms.length === 0 && (
-          <Text style={styles.empty}>No films found. Try another search.</Text>
+          <Text style={styles.empty}>
+            No films found. Try another search.
+          </Text>
         )}
       </ScrollView>
 
@@ -120,15 +146,32 @@ export default function HomeScreen({ navigation, favoriteIds, toggleFavorite }) 
         }}
         onClose={() => setOpenFilter(null)}
       />
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+
   // paddingTop is the space above the logo, change it in theme.js
-  screen: { flex: 1, backgroundColor: colors.background, paddingTop: layout.topPadding },
-  logo: { fontFamily: fonts.title, fontSize: 28, color: colors.text, paddingHorizontal: 16, paddingTop: 8 },
-  logoAccent: { color: colors.accentLight },
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingTop: layout.topPadding,
+  },
+
+  logo: {
+    fontFamily: fonts.title,
+    fontSize: 28,
+    color: colors.text,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+
+  logoAccent: {
+    color: colors.accentLight,
+  },
+
   search: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -140,8 +183,29 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 12,
   },
-  searchInput: { flex: 1, fontFamily: fonts.body, fontSize: 14, color: colors.text },
-  chips: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
+
+  searchInput: {
+    flex: 1,
+    fontFamily: fonts.body,
+    fontSize: 14,
+    color: colors.text,
+  },
+
+
+  //filter buttons//collumn
+  //  all three filter buttons as one group
+  chips: {
+    flexDirection: 'row',
+    justifyContent: 'left',
+    alignItems: 'left',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    width: '100%',
+    flexWrap: 'wrap',
+  },
+
+  // Individual filter button
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -153,9 +217,30 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: colors.border,
   },
-  chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
-  chipText: { fontFamily: fonts.body, fontSize: 13, color: colors.text },
+
+  // Selected filter button
+  chipActive: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+
+  chipText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: colors.text,
+  },
+
   // Space at the bottom so the last row isn't hidden by the tabs
-  content: { paddingTop: 8, paddingBottom: 20 },
-  empty: { fontFamily: fonts.body, color: colors.textMuted, textAlign: 'center', marginTop: 40 },
+  content: {
+    paddingTop: 8,
+    paddingBottom: 20,
+  },
+
+  empty: {
+    fontFamily: fonts.body,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: 40,
+  },
+
 });
