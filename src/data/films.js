@@ -6,7 +6,7 @@
 
 export const films = [
   // =========================================================
-  // COLLEGE OF COMPUTING AND INFORMATION SYSTEM
+  // COLLEGE OF COMPUTING AND INFORMATION SCIENCES
   // =========================================================
 
   {
@@ -15,7 +15,7 @@ export const films = [
     poster: require('../../assets/posters/ccis.jpg'),
     genre: 'Romance',
     year: 2025,
-    department: 'College of Computing and Information System',
+    department: 'College of Computing and Information Sciences',
     tags: ['new', 'winners2025'],
     description:
       '',
@@ -28,7 +28,7 @@ export const films = [
     poster: require('../../assets/posters/ccis2024.jpg'),
     genre: 'Thriller',
     year: 2026,
-    department: 'College of Computing and Information System',
+    department: 'College of Computing and Information Sciences',
     tags: ['new'],
     description:
       'A group of student developers encounter a mysterious system error that leads them to an unexpected discovery.',
@@ -96,7 +96,7 @@ export const films = [
   },
 
   // =========================================================
-  // COLLEGE OF AUTOMOTIVE AND TECHNOLOGY
+  // COLLEGE OF AGRICULTURE AND TECHNOLOGY
   // =========================================================
 
   {
@@ -105,7 +105,7 @@ export const films = [
     poster: require('../../assets/posters/cat2024.jpg'),
     genre: 'Drama',
     year: 2024,
-    department: 'College of Automotive and Technology',
+    department: 'College of Agriculture and Technology',
     tags: ['new'],
     description:
       'Automotive students race against time to restore a forgotten vehicle for one final challenge.',
@@ -118,7 +118,7 @@ export const films = [
     poster: null,
     genre: 'Documentary',
     year: 2025,
-    department: 'College of Automotive and Technology',
+    department: 'College of Agriculture and Technology',
     tags: [],
     description:
       'A look into the passion, hard work, and technical skills behind automotive technology students.',
@@ -156,7 +156,7 @@ export const films = [
   },
 
   // =========================================================
-  // COLLEGE OF CRIMINAL JUSTICE
+  // COLLEGE OF CRIMINAL JUSTICE AND SCIENCES
   // =========================================================
 
   {
@@ -165,7 +165,7 @@ export const films = [
     poster: require ('../../assets/posters/ccjs.jpg'),
     genre: 'Romance,Comedy',
     year: 2025,
-    department: 'College of Criminal Justice',
+    department: 'College of Criminal Justice and Sciences',
     tags: ['new', 'winners2025'],
     description:
       '.',
@@ -179,7 +179,7 @@ export const films = [
     poster: require('../../assets/posters/coed2024.jpg'),
     genre: 'Crime',
     year: 2025,
-    department: 'College of Criminal Justice',
+    department: 'College of Criminal Justice and Sciences',
     tags: [],
     description:
       'A student investigation reveals that evidence can tell a very different story from what first appears.',
