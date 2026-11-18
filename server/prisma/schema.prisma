@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PublicationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Film {
+  id                String              @id
+  title             String
+  description       String              @default("")
+  releaseYear       Int                 @map("release_year")
+  posterReference   String?             @map("poster_reference")
+  facebookVideoUrl  String?             @map("facebook_video_url")
+  publicationStatus PublicationStatus   @default(DRAFT) @map("publication_status")
+  departmentId      Int                 @map("department_id")
+  department        Department          @relation(fields: [departmentId], references: [id])
+  genres            FilmGenre[]
+  collections       CollectionFilm[]
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+
+  @@index([title])
+  @@index([releaseYear])
+  @@index([departmentId])
+  @@map("films")
+}
+
+model Department {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  slug      String   @unique
+  films     Film[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("departments")
+}
+
+model Genre {
+  id        Int         @id @default(autoincrement())
+  name      String      @unique
+  slug      String      @unique
+  films     FilmGenre[]
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  @@map("genres")
+}
+
+model FilmGenre {
+  filmId  String @map("film_id")
+  genreId Int    @map("genre_id")
+  film    Film   @relation(fields: [filmId], references: [id], onDelete: Cascade)
+  genre   Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([filmId, genreId])
+  @@map("film_genres")
+}
+
+model Collection {
+  id          Int              @id @default(autoincrement())
+  slug        String           @unique
+  title       String
+  description String           @default("")
+  films       CollectionFilm[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@map("collections")
+}
+
+model CollectionFilm {
+  collectionId Int        @map("collection_id")
+  filmId       String     @map("film_id")
+  position     Int        @default(0)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  film         Film       @relation(fields: [filmId], references: [id], onDelete: Cascade)
+
+  @@id([collectionId, filmId])
+  @@index([filmId])
+  @@map("collection_films")
+}
