@@ -1,4 +1,4 @@
-import { Modal, View, Text, Pressable, FlatList, StyleSheet } from 'react-native';
+import { Modal, Text, Pressable, FlatList, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from '../theme';
 

@@ -1,10 +1,12 @@
-import { View, Text, Image, Pressable, ScrollView, Linking, Alert, StyleSheet, useWindowDimensions } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, View, Text, Image, Pressable, ScrollView, Alert, StyleSheet, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from '../theme';
-import { films } from '../data/films';
+import { getFilm } from '../api/films';
+import FacebookVideoModal from '../components/FacebookVideoModal';
 
 // Receives route (has the film id) plus the favorites props from App.js
-export default function FilmDetailsScreen({ route, favoriteIds, toggleFavorite }) {
+export default function FilmDetailsScreen({ route, favoriteIds, toggleFavorite, films }) {
   // The phone's screen width, so the poster size adapts to any phone
   const { width } = useWindowDimensions();
 
@@ -13,14 +15,34 @@ export default function FilmDetailsScreen({ route, favoriteIds, toggleFavorite }
   // Height is 1.5 times the width, which keeps the 2:3 poster shape
   const posterHeight = posterWidth * 1.5;
 
-  // Finds the tapped film in films.js using the id sent from the previous screen
-  const film = films.find((f) => f.id === route.params.filmId);
+  const cachedFilm = films.find((f) => f.id === route.params.filmId);
+  const [film, setFilm] = useState(cachedFilm ?? null);
+  const [loading, setLoading] = useState(!cachedFilm);
+  const [error, setError] = useState(null);
+  const [playerVisible, setPlayerVisible] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    getFilm(route.params.filmId, controller.signal)
+      .then(setFilm)
+      .catch((requestError) => {
+        if (requestError.name !== 'AbortError') setError(requestError.message);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [cachedFilm, route.params.filmId]);
+
+  if (loading && !film) {
+    return <View style={styles.screen}><ActivityIndicator color={colors.accentLight} style={styles.loading} /></View>;
+  }
 
   // Shows a message instead of crashing if the film id isn't found
   if (!film) {
     return (
       <View style={styles.screen}>
-        <Text style={styles.missing}>Film not found. Check the ids in films.js.</Text>
+        <Text style={styles.missing}>{error ?? 'Film not found.'}</Text>
       </View>
     );
   }
@@ -28,10 +50,10 @@ export default function FilmDetailsScreen({ route, favoriteIds, toggleFavorite }
   // True if this film is in the favorites list
   const isFavorite = favoriteIds.includes(film.id);
 
-  // Opens the film's link, or shows a message if there is none yet
+  // Opens the official Facebook embedded player, or shows a message if there is no URL.
   const watchNow = () => {
     if (film.link) {
-      Linking.openURL(film.link);
+      setPlayerVisible(true);
     } else {
       Alert.alert('Coming soon', 'No link has been added for this film yet.');
     }
@@ -39,6 +61,7 @@ export default function FilmDetailsScreen({ route, favoriteIds, toggleFavorite }
 
   return (
     // ScrollView lets the page scroll if the description is long
+    <>
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       {/* Poster with a fixed pixel size, or the dark fallback box when poster is null */}
       {film.poster ? (
@@ -83,6 +106,14 @@ export default function FilmDetailsScreen({ route, favoriteIds, toggleFavorite }
       {/* Description shows only if the film has one */}
       {film.description ? <Text style={styles.description}>{film.description}</Text> : null}
     </ScrollView>
+    {playerVisible && (
+      <FacebookVideoModal
+        visible
+        videoUrl={film.link}
+        onClose={() => setPlayerVisible(false)}
+      />
+    )}
+    </>
   );
 }
 
@@ -91,6 +122,7 @@ const styles = StyleSheet.create({
   // alignItems centers everything horizontally
   content: { alignItems: 'center', padding: 20, paddingBottom: 40 },
   missing: { fontFamily: fonts.body, color: colors.textMuted, textAlign: 'center', marginTop: 60 },
+  loading: { marginTop: 60 },
   fallback: { backgroundColor: colors.surface, borderRadius: 14, justifyContent: 'center', alignItems: 'center', padding: 12 },
   fallbackText: { fontFamily: fonts.title, fontSize: 18, color: colors.text, textAlign: 'center' },
   title: { fontFamily: fonts.title, fontSize: 26, color: colors.text, textAlign: 'center', marginTop: 20 },
