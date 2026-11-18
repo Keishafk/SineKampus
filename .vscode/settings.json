@@ -1,0 +1,6 @@
+{
+  "mssql.intelliSense.enableErrorChecking": false,
+  "files.associations": {
+    "**/server/prisma/migrations/**/*.sql": "plaintext"
+  }
+}
