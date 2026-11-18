@@ -1,4 +1,5 @@
-// films.js — the MOCK DATABASE for SineKampus.
+// LEGACY MOCK DATA: the running app now loads films from src/api/films.js.
+// Keep this file only as a simple example of the older local-data structure.
 //
 // Each film belongs to one college/department.
 // The Home screen automatically uses these department values
@@ -178,12 +179,12 @@ export const films = [
     title: 'Marahuyo',
     poster: require('../../assets/posters/coed2024.jpg'),
     genre: 'Crime',
-    year: 2025,
+    year: 2024,
     department: 'College of Criminal Justice and Sciences',
     tags: [],
     description:
       'A student investigation reveals that evidence can tell a very different story from what first appears.',
-    link: '',
+    link: 'https://www.facebook.com/share/v/1FWr4qnBQZ/',
   },
 
 
