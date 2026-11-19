@@ -13,19 +13,9 @@ const collections = [
 // This array is the editable source of truth for the development film catalog.
 // Keep every id unique and sequential, and use null when a value is unavailable.
 const films = [
+  
   {
     id: '1',
-    title: 'Ang Mutya ng Section E',
-    description: 'A fearless young girl finds herself as the only female student in a classroom filled with mischievous boys. As she faces their pranks, challenges, and unexpected friendships, she discovers that love and adventure can begin in the most chaotic places.',
-    releaseYear: 2025,
-    department: 'College of Computing and Information Sciences',
-    genres: ['Romance'],
-    tags: ['new', 'winners2025'],
-    posterReference: 'ccis.jpg',
-    facebookVideoUrl: null,
-  },
-  {
-    id: '2',
     title: 'Uninvited Love',
     description: 'An unexpected romance brings two different worlds together, where complicated feelings, hidden emotions, and difficult choices challenge the meaning of true love.',
     releaseYear: 2024,
@@ -36,7 +26,7 @@ const films = [
     facebookVideoUrl: 'https://www.facebook.com/reel/1105203207932427',
   },
 {
-    id: '3',
+    id: '2',
     title: 'Golden Scenery Of Tommorow',
     description: 'A heartwarming story of young love, dreams, and second chances, where unexpected connections and unforgettable moments shape the journey toward a brighter tomorrow.',
     releaseYear: 2026,
@@ -48,7 +38,7 @@ const films = [
   },
 
   {
-    id: '4',
+    id: '3',
     title: 'Four Sisters Before the Wedding',
     description: 'Four sisters join forces to save their parents marriage after discovering a secret that threatens to tear their family apart. Their hilarious and heartfelt adventure teaches them the true meaning of family and togetherness.',
     releaseYear: 2026,
@@ -60,7 +50,7 @@ const films = [
   },
   
   {
-    id: '5',
+    id: '4',
     title: 'The Exorcist',
     description: 'When a young girl begins displaying terrifying and unexplained behavior, her desperate mother seeks help from two priests. What follows is a horrifying battle against a powerful evil that tests the limits of faith and courage.',
     releaseYear: 2025,
@@ -71,7 +61,7 @@ const films = [
     facebookVideoUrl: 'https://www.facebook.com/100077051572691/videos/pcb.816616084250103/783543854553420',
   },
   {
-    id: '6',
+    id: '5',
     title: 'No Budget Love',
     description: 'Love doesn\'t always require money, but surviving life\'s challenges together is another story. Follow a romantic journey filled with laughter, sacrifices, and the realization that genuine affection is worth more than material things.',
     releaseYear: 2024,
@@ -83,7 +73,7 @@ const films = [
   },
 
 {
-    id: '7',
+    id: '6',
     title: 'Meet Greet Bye',
     description: 'Four siblings reunite to fulfill their sick mother\'s dream of meeting her favorite Korean celebrity. Along the way, they rediscover the importance of family, forgiveness, and making unforgettable memories together.',
     releaseYear: 2026,
@@ -96,7 +86,7 @@ const films = [
 
 
   {
-    id: '8',
+    id: '7',
     title: 'Even Sundays',
     description: 'A touching story about love, relationships, and the moments that bring people together, reminding us that even the simplest days can hold the most meaningful memories.',
     releaseYear: 2024,
@@ -107,7 +97,7 @@ const films = [
     facebookVideoUrl: 'https://www.facebook.com/reel/1986735935086849',
   },
   {
-    id: '9',
+    id: '8',
     title: 'Wonderful Nightmare',
     description: 'A successful lawyer unexpectedly gets a second chance at life, but with a surprising twist: she must live as a wife and mother. Through her unusual experience, she discovers the true meaning of love, family, and happiness.',
     releaseYear: 2026,
@@ -118,7 +108,7 @@ const films = [
     facebookVideoUrl: 'https://www.facebook.com/reel/2200788487503462',
   },
   {
-    id: '10',
+    id: '9',
     title: 'Sinetch Itey',
     description: 'Nando and Sabrina, two people living completely different lives, unexpectedly switch places, leading to a series of hilarious misunderstandings and chaotic situations. As they struggle to adjust to each other\'s worlds, they discover surprising lessons about identity, friendship, and understanding one another.',
     releaseYear: 2025,
@@ -129,7 +119,7 @@ const films = [
     facebookVideoUrl: 'https://www.facebook.com/100077051572691/videos/pcb.816616084250103/819537127496262',
   },
   {
-    id: '11',
+    id: '10',
     title: 'Goodbye,Pare; Hello.Mare!',
     description: 'Inspired by This Guy\'s in Love with U Mare!, this romantic comedy follows an unexpected love triangle filled with jealousy, hilarious schemes, and surprising revelations. When a heartbroken man discovers that his former lover has moved on, he creates an outrageous plan to win him back, leading to a chaotic adventure where love and deception collide.',
     releaseYear: 2024,
@@ -141,7 +131,7 @@ const films = [
   },
 
 {
-    id: '12',
+    id: '11',
     title: 'Diary ng Panget',
     description: 'A simple, hardworking girl becomes the personal maid of a handsome but arrogant rich boy. Despite their constant arguments and differences, an unexpected romance begins to blossom, proving that true beauty comes from within.',
     releaseYear: 2026,
@@ -154,7 +144,7 @@ const films = [
 
 
   {
-    id: '13',
+    id: '12',
     title: 'Loving in Tandem',
     description: 'Two young people from different backgrounds unexpectedly cross paths and discover a special connection. Through funny misunderstandings, friendship, and romantic adventures, they learn that love can bring even the most unlikely people together.',
     releaseYear: 2025,
@@ -164,21 +154,10 @@ const films = [
     posterReference: 'ccjs.jpg',
     facebookVideoUrl: 'https://www.facebook.com/100077051572691/videos/pcb.816616084250103/1458586675443586',
   },
-  {
-    id: '14',
-    title: 'Marahuyo',
-    description: 'In a traditional seaside town, a determined young student fights to establish his university\'s first LGBTQIA+ organization. Along the way, he discovers friendship, acceptance, and unexpected romance while challenging the beliefs of a conservative community.',
-    releaseYear: 2024,
-    department: 'College of Criminal Justice and Sciences',
-    genres: ['Crime'],
-    tags: [],
-    posterReference: 'ccjs2024.jpg',
-    facebookVideoUrl: 'https://www.facebook.com/reel/1105203207932427',
-  },
-
+  
 
 {
-    id: '15',
+    id: '13',
     title: 'Ang Babaeng Walang Pakiramdam',
     description: 'A young woman who cannot feel physical pain meets a man who changes her understanding of love and happiness. Together, they experience an extraordinary journey filled with laughter, emotions, and discoveries about what it truly means to feel.',
     releaseYear: 2026,
@@ -190,7 +169,7 @@ const films = [
   },
 
   {
-    id: '16',
+    id: '14',
     title: 'Innocence Behind Bars',
     description: '',
     releaseYear: 2024,
@@ -202,7 +181,7 @@ const films = [
   },
 
   {
-    id: '17',
+    id: '15',
     title: '2 Valid Ids',
     description: 'When a struggling farmer desperately needs money for her husband\'s medical treatment, she faces an unexpected obstacle: a requirement for two valid identification cards. Her emotional journey reveals the harsh realities of poverty, bureaucracy, and the fight to survive.',
     releaseYear: 2026,
