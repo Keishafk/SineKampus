@@ -1,10 +1,9 @@
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { ActivityIndicator, View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
 import { colors, fonts, layout } from '../theme';
-import { films } from '../data/films';
 import FilmCard from '../components/FilmCard';
 
 // Receives navigation plus the favorites props from App.js
-export default function FavoritesScreen({ navigation, favoriteIds, toggleFavorite }) {
+export default function FavoritesScreen({ navigation, favoriteIds, toggleFavorite, films, loading, error, onRetry }) {
   // Keeps only the films whose id is in the favorites list
   const favoriteFilms = films.filter((f) => favoriteIds.includes(f.id));
 
@@ -32,7 +31,12 @@ export default function FavoritesScreen({ navigation, favoriteIds, toggleFavorit
         )}
         // Shown when there are no favorites yet
         ListEmptyComponent={
-          <Text style={styles.empty}>No favorites yet. Go find something to watch.</Text>
+          loading ? <ActivityIndicator color={colors.accentLight} style={styles.empty} /> : error ? (
+            <View>
+              <Text style={styles.empty}>Favorites could not be loaded. {error}</Text>
+              <Pressable onPress={onRetry}><Text style={styles.retry}>Try again</Text></Pressable>
+            </View>
+          ) : <Text style={styles.empty}>No favorites yet. Go find something to watch.</Text>
         }
       />
     </View>
@@ -47,4 +51,5 @@ const styles = StyleSheet.create({
   // Each cell takes half the width
   cell: { width: '50%', padding: 6 },
   empty: { fontFamily: fonts.body, color: colors.textMuted, textAlign: 'center', marginTop: 40 },
+  retry: { fontFamily: fonts.bodyBold, color: colors.accentLight, textAlign: 'center', marginTop: 12 },
 });

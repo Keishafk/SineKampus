@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, View, Text, TextInput, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, layout } from '../theme';
-import { films } from '../data/films';
 import { rows } from '../data/rows';
 import FilmRow from '../components/FilmRow';
 import FilterSheet from '../components/FilterSheet';
@@ -15,7 +14,7 @@ const FILTERS = [
 ];
 
 // Receives navigation plus the favorites props from App.js
-export default function HomeScreen({ navigation, favoriteIds, toggleFavorite }) {
+export default function HomeScreen({ navigation, favoriteIds, toggleFavorite, films, loading, error, onRetry }) {
   // Text typed in the search bar
   const [query, setQuery] = useState('');
 
@@ -30,12 +29,14 @@ export default function HomeScreen({ navigation, favoriteIds, toggleFavorite }) 
   const [openFilter, setOpenFilter] = useState(null);
 
   // Gets every different value of a field, like all genres, sorted
-  const uniqueValues = (key) => [...new Set(films.map((f) => f[key]))].sort();
+  const uniqueValues = (key) => [...new Set(
+    key === 'genre' ? films.flatMap((f) => f.genres ?? [f.genre]) : films.map((f) => f[key])
+  )].sort();
 
   // Keeps only the films that match the search and all filters
   const visibleFilms = films.filter((f) => {
     const matchesSearch = f.title.toLowerCase().includes(query.toLowerCase());
-    const matchesGenre = filters.genre === null || f.genre === filters.genre;
+    const matchesGenre = filters.genre === null || (f.genres ?? [f.genre]).includes(filters.genre);
     const matchesYear = filters.year === null || f.year === filters.year;
     const matchesDept =
       filters.department === null || f.department === filters.department;
@@ -114,6 +115,19 @@ export default function HomeScreen({ navigation, favoriteIds, toggleFavorite }) 
 
       {/* The page scrolls down, and each row scrolls sideways */}
       <ScrollView contentContainerStyle={styles.content}>
+        {loading && films.length === 0 && (
+          <ActivityIndicator color={colors.accentLight} style={styles.status} />
+        )}
+
+        {error && films.length === 0 && (
+          <View style={styles.status}>
+            <Text style={styles.empty}>Films could not be loaded. {error}</Text>
+            <Pressable style={styles.retryButton} onPress={onRetry}>
+              <Text style={styles.retryText}>Try again</Text>
+            </Pressable>
+          </View>
+        )}
+
         {visibleSections.map((section) => (
           <FilmRow
             key={section.id}
@@ -126,7 +140,7 @@ export default function HomeScreen({ navigation, favoriteIds, toggleFavorite }) 
         ))}
 
         {/* Shown when no film matches the search or filters */}
-        {visibleFilms.length === 0 && (
+        {!loading && !error && visibleFilms.length === 0 && (
           <Text style={styles.empty}>
             No films found. Try another search.
           </Text>
@@ -242,5 +256,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 40,
   },
+
+  status: { marginTop: 36, alignItems: 'center', paddingHorizontal: 24 },
+  retryButton: { backgroundColor: colors.accent, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 10, marginTop: 14 },
+  retryText: { fontFamily: fonts.bodyBold, color: colors.text },
 
 });

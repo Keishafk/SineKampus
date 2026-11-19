@@ -1,18 +1,18 @@
-import { useState } from 'react';
-import { Platform } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, PlayfairDisplay_500Medium } from '@expo-google-fonts/playfair-display';
 import { Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
-import Storage from 'expo-sqlite/kv-store';
 
 import { colors, fonts, layout } from './src/theme';
 import HomeScreen from './src/screens/HomeScreen';
 import FavoritesScreen from './src/screens/FavoritesScreen';
 import FilmDetailsScreen from './src/screens/FilmDetailsScreen';
+import { getFilms } from './src/api/films';
 
 // The name the favorites are saved under
 const KEY = 'sinekampus_favorites';
@@ -33,34 +33,14 @@ const navTheme = {
   },
 };
 
-// Storage helpers
-function getFavorites() {
-  if (Platform.OS === 'web') {
-    try {
-      return window.localStorage.getItem(KEY);
-    } catch {
-      return null;
-    }
-  }
-
-  return Storage.getItemSync(KEY);
-}
-
 function saveFavorites(value) {
-  if (Platform.OS === 'web') {
-    try {
-      window.localStorage.setItem(KEY, value);
-    } catch {
-      // Ignore browser storage errors
-    }
-    return;
-  }
-
-  Storage.setItemSync(KEY, value);
+  AsyncStorage.setItem(KEY, value).catch(() => {
+    // Favorites remain available for this session if storage is unavailable.
+  });
 }
 
 // The bottom tabs: Home and Favorites
-function Tabs({ favoriteIds, toggleFavorite }) {
+function Tabs({ favoriteIds, toggleFavorite, films, filmsLoading, filmsError, reloadFilms }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -101,6 +81,10 @@ function Tabs({ favoriteIds, toggleFavorite }) {
             {...props}
             favoriteIds={favoriteIds}
             toggleFavorite={toggleFavorite}
+            films={films}
+            loading={filmsLoading}
+            error={filmsError}
+            onRetry={reloadFilms}
           />
         )}
       </Tab.Screen>
@@ -111,6 +95,10 @@ function Tabs({ favoriteIds, toggleFavorite }) {
             {...props}
             favoriteIds={favoriteIds}
             toggleFavorite={toggleFavorite}
+            films={films}
+            loading={filmsLoading}
+            error={filmsError}
+            onRetry={reloadFilms}
           />
         )}
       </Tab.Screen>
@@ -127,10 +115,45 @@ export default function App() {
   });
 
   // Load saved favorites
-  const [favoriteIds, setFavoriteIds] = useState(() => {
-    const saved = getFavorites();
-    return saved ? saved.split(',') : [];
-  });
+  const [favoriteIds, setFavoriteIds] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+
+    AsyncStorage.getItem(KEY)
+      .then((saved) => {
+        if (active && saved) setFavoriteIds(saved.split(','));
+      })
+      .catch(() => {
+        // Start with an empty favorites list if storage is unavailable.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const [films, setFilms] = useState([]);
+  const [filmsLoading, setFilmsLoading] = useState(true);
+  const [filmsError, setFilmsError] = useState(null);
+
+  const loadFilms = useCallback(async (signal) => {
+    setFilmsLoading(true);
+    setFilmsError(null);
+    try {
+      setFilms(await getFilms(signal));
+    } catch (error) {
+      if (error.name !== 'AbortError') setFilmsError(error.message);
+    } finally {
+      if (!signal?.aborted) setFilmsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadFilms(controller.signal);
+    return () => controller.abort();
+  }, [loadFilms]);
 
   // Add/remove favorites
   const toggleFavorite = (id) => {
@@ -161,6 +184,10 @@ export default function App() {
               <Tabs
                 favoriteIds={favoriteIds}
                 toggleFavorite={toggleFavorite}
+                films={films}
+                filmsLoading={filmsLoading}
+                filmsError={filmsError}
+                reloadFilms={() => loadFilms()}
               />
             )}
           </Stack.Screen>
@@ -181,6 +208,10 @@ export default function App() {
                 {...props}
                 favoriteIds={favoriteIds}
                 toggleFavorite={toggleFavorite}
+                films={films}
+                filmsLoading={filmsLoading}
+                filmsError={filmsError}
+                reloadFilms={() => loadFilms()}
               />
             )}
           </Stack.Screen>

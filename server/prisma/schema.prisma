@@ -1,0 +1,113 @@
+// Generate the JavaScript client imported by the Express server and seed file.
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Read the PostgreSQL connection string from server/.env.
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// A film can be prepared privately, visible publicly, or kept as an archive.
+enum PublicationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// The main movie record displayed by the SineKampus application.
+model Film {
+  // IDs are supplied by the seed data so they remain stable across reseeding.
+  id                String              @id
+  title             String
+  description       String              @default("")
+  // @map keeps JavaScript names readable while PostgreSQL uses snake_case.
+  releaseYear       Int                 @map("release_year")
+  posterReference   String?             @map("poster_reference")
+  facebookVideoUrl  String?             @map("facebook_video_url")
+  publicationStatus PublicationStatus   @default(DRAFT) @map("publication_status")
+
+  // departmentId is the stored foreign key; department is the related object.
+  departmentId      Int                 @map("department_id")
+  department        Department          @relation(fields: [departmentId], references: [id])
+
+  // Join-table arrays allow one film to have many genres and collections.
+  genres            FilmGenre[]
+  collections       CollectionFilm[]
+
+  // Prisma automatically creates and updates these timestamps.
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+
+  // Indexes make the API's common search/filter operations faster.
+  @@index([title])
+  @@index([releaseYear])
+  @@index([departmentId])
+  @@map("films")
+}
+
+// The college or academic department responsible for a film.
+model Department {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  slug      String   @unique
+  films     Film[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("departments")
+}
+
+// A reusable category such as Drama, Documentary, or Comedy.
+model Genre {
+  id        Int         @id @default(autoincrement())
+  name      String      @unique
+  slug      String      @unique
+  films     FilmGenre[]
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  @@map("genres")
+}
+
+// Many-to-many bridge between Film and Genre.
+model FilmGenre {
+  filmId  String @map("film_id")
+  genreId Int    @map("genre_id")
+  film    Film   @relation(fields: [filmId], references: [id], onDelete: Cascade)
+  genre   Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  // The combined key prevents assigning the same genre twice to one film.
+  @@id([filmId, genreId])
+  @@map("film_genres")
+}
+
+// A named homepage grouping, such as featured films or festival winners.
+model Collection {
+  id          Int              @id @default(autoincrement())
+  slug        String           @unique
+  title       String
+  description String           @default("")
+  films       CollectionFilm[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@map("collections")
+}
+
+// Many-to-many bridge between collections and films. `position` determines
+// where a film appears inside its collection row.
+model CollectionFilm {
+  collectionId Int        @map("collection_id")
+  filmId       String     @map("film_id")
+  position     Int        @default(0)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  film         Film       @relation(fields: [filmId], references: [id], onDelete: Cascade)
+
+  // One film may appear only once in any individual collection.
+  @@id([collectionId, filmId])
+  // This index speeds up finding every collection that contains a film.
+  @@index([filmId])
+  @@map("collection_films")
+}
