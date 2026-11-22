@@ -10,12 +10,21 @@ import { Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
 import Storage from 'expo-sqlite/kv-store';
 
 import { colors, fonts, layout } from './src/theme';
+import { films } from './src/data/films';
 import HomeScreen from './src/screens/HomeScreen';
 import FavoritesScreen from './src/screens/FavoritesScreen';
 import FilmDetailsScreen from './src/screens/FilmDetailsScreen';
+import SaveToFolderSheet from './src/components/SaveToFolderSheet';
 
-// The name the favorites are saved under
-const KEY = 'sinekampus_favorites';
+// The name the folders are saved under
+const FOLDERS_KEY = 'sinekampus_folders';
+
+// Folders every user starts with
+const DEFAULT_FOLDERS = [
+  { id: 'watch-later', name: 'Watch Later', filmIds: [] },
+  { id: 'my-favorites', name: 'My Favorites', filmIds: [] },
+  { id: 'already-watched', name: 'Already Watched', filmIds: [] },
+];
 
 // Tabs sit at the bottom, the Stack opens screens on top of them
 const Tab = createBottomTabNavigator();
@@ -34,33 +43,43 @@ const navTheme = {
 };
 
 // Storage helpers
-function getFavorites() {
+function getSaved(key) {
   if (Platform.OS === 'web') {
     try {
-      return window.localStorage.getItem(KEY);
+      return window.localStorage.getItem(key);
     } catch {
       return null;
     }
   }
 
-  return Storage.getItemSync(KEY);
+  return Storage.getItemSync(key);
 }
 
-function saveFavorites(value) {
+function save(key, value) {
   if (Platform.OS === 'web') {
     try {
-      window.localStorage.setItem(KEY, value);
+      window.localStorage.setItem(key, value);
     } catch {
       // Ignore browser storage errors
     }
     return;
   }
 
-  Storage.setItemSync(KEY, value);
+  Storage.setItemSync(key, value);
+}
+
+// Reads the saved folders, or falls back to the default ones
+function loadFolders() {
+  try {
+    const saved = getSaved(FOLDERS_KEY);
+    return saved ? JSON.parse(saved) : DEFAULT_FOLDERS;
+  } catch {
+    return DEFAULT_FOLDERS;
+  }
 }
 
 // The bottom tabs: Home and Favorites
-function Tabs({ favoriteIds, toggleFavorite }) {
+function Tabs({ favoriteIds, toggleFavorite, folderApi }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -84,11 +103,7 @@ function Tabs({ favoriteIds, toggleFavorite }) {
 
         tabBarIcon: ({ color, size }) => (
           <Ionicons
-            name={
-              route.name === 'Home'
-                ? 'home-outline'
-                : 'heart-outline'
-            }
+            name={route.name === 'Home' ? 'home-outline' : 'heart-outline'}
             size={size}
             color={color}
           />
@@ -106,13 +121,7 @@ function Tabs({ favoriteIds, toggleFavorite }) {
       </Tab.Screen>
 
       <Tab.Screen name="Favorites">
-        {(props) => (
-          <FavoritesScreen
-            {...props}
-            favoriteIds={favoriteIds}
-            toggleFavorite={toggleFavorite}
-          />
-        )}
+        {(props) => <FavoritesScreen {...props} folderApi={folderApi} />}
       </Tab.Screen>
     </Tab.Navigator>
   );
@@ -126,26 +135,78 @@ export default function App() {
     Inter_500Medium,
   });
 
-  // Load saved favorites
-  const [favoriteIds, setFavoriteIds] = useState(() => {
-    const saved = getFavorites();
-    return saved ? saved.split(',') : [];
-  });
+  // All folders, each one: { id, name, filmIds: [] }
+  const [folders, setFolders] = useState(loadFolders);
 
-  // Add/remove favorites
-  const toggleFavorite = (id) => {
-    const next = favoriteIds.includes(id)
-      ? favoriteIds.filter((x) => x !== id)
-      : [...favoriteIds, id];
+  // The film id whose "Save to Folder" sheet is open (null = closed)
+  const [sheetFilmId, setSheetFilmId] = useState(null);
 
-    setFavoriteIds(next);
-
-    // Save favorites
-    saveFavorites(next.join(','));
+  // Saves the new folders list in state and in storage
+  const updateFolders = (next) => {
+    setFolders(next);
+    save(FOLDERS_KEY, JSON.stringify(next));
   };
+
+  // Make a new folder (optionally with some films already inside)
+  const createFolder = (name, filmIds = []) => {
+    updateFolders([...folders, { id: Date.now().toString(), name, filmIds }]);
+  };
+
+  const renameFolder = (folderId, name) => {
+    updateFolders(folders.map((f) => (f.id === folderId ? { ...f, name } : f)));
+  };
+
+  const deleteFolder = (folderId) => {
+    updateFolders(folders.filter((f) => f.id !== folderId));
+  };
+
+  // Add the film if it's not in the folder, remove it if it is
+  const toggleFilmInFolder = (folderId, filmId) => {
+    updateFolders(
+      folders.map((f) =>
+        f.id !== folderId
+          ? f
+          : {
+              ...f,
+              filmIds: f.filmIds.includes(filmId)
+                ? f.filmIds.filter((x) => x !== filmId)
+                : [...f.filmIds, filmId],
+            }
+      )
+    );
+  };
+
+  // Add many films at once (used by "Add Movies")
+  const addFilmsToFolder = (folderId, filmIds) => {
+    updateFolders(
+      folders.map((f) =>
+        f.id !== folderId
+          ? f
+          : { ...f, filmIds: [...new Set([...f.filmIds, ...filmIds])] }
+      )
+    );
+  };
+
+  // Everything the Favorites screen needs, in one object
+  const folderApi = {
+    folders,
+    createFolder,
+    renameFolder,
+    deleteFolder,
+    toggleFilmInFolder,
+    addFilmsToFolder,
+  };
+
+  // A film shows a filled heart if it is inside ANY folder
+  const favoriteIds = [...new Set(folders.flatMap((f) => f.filmIds))];
+
+  // The heart now opens the "Save to Folder" sheet instead of toggling
+  const toggleFavorite = (id) => setSheetFilmId(id);
 
   // Show nothing until fonts are ready
   if (!loaded) return null;
+
+  const sheetFilm = films.find((f) => f.id === sheetFilmId);
 
   return (
     <>
@@ -153,14 +214,12 @@ export default function App() {
 
       <NavigationContainer theme={navTheme}>
         <Stack.Navigator>
-          <Stack.Screen
-            name="Tabs"
-            options={{ headerShown: false }}
-          >
+          <Stack.Screen name="Tabs" options={{ headerShown: false }}>
             {() => (
               <Tabs
                 favoriteIds={favoriteIds}
                 toggleFavorite={toggleFavorite}
+                folderApi={folderApi}
               />
             )}
           </Stack.Screen>
@@ -170,9 +229,7 @@ export default function App() {
             options={{
               title: '',
               headerTintColor: colors.text,
-              headerStyle: {
-                backgroundColor: colors.background,
-              },
+              headerStyle: { backgroundColor: colors.background },
               headerShadowVisible: false,
             }}
           >
@@ -186,6 +243,17 @@ export default function App() {
           </Stack.Screen>
         </Stack.Navigator>
       </NavigationContainer>
+
+      {/* The "Save to Folder" popup, works from any screen */}
+      <SaveToFolderSheet
+        visible={sheetFilmId !== null}
+        filmTitle={sheetFilm?.title ?? ''}
+        filmId={sheetFilmId}
+        folders={folders}
+        onToggle={(folderId) => toggleFilmInFolder(folderId, sheetFilmId)}
+        onCreate={(name) => createFolder(name, [sheetFilmId])}
+        onClose={() => setSheetFilmId(null)}
+      />
     </>
   );
 }
