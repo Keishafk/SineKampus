@@ -1,75 +1,111 @@
+
 import { useState } from 'react';
-import { ActivityIndicator, View, Text, TextInput, Pressable, ScrollView, StyleSheet } from 'react-native';
+import {
+  ActivityIndicator,
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, layout } from '../theme';
 import { rows } from '../data/rows';
 import FilmRow from '../components/FilmRow';
+import FilmCard from '../components/FilmCard';
 import FilterSheet from '../components/FilterSheet';
 
-// The three filter chips: key matches the field name in films.js
 const FILTERS = [
   { key: 'genre', label: 'Genre' },
   { key: 'year', label: 'Year' },
   { key: 'department', label: 'Department' },
 ];
 
-// Receives navigation plus the favorites props from App.js
-export default function HomeScreen({ navigation, favoriteIds, toggleFavorite, films, loading, error, onRetry }) {
-  // Text typed in the search bar
+export default function HomeScreen({
+  navigation,
+  favoriteIds,
+  toggleFavorite,
+  films,
+  loading,
+  error,
+  onRetry,
+}) {
   const [query, setQuery] = useState('');
 
-  // Chosen value for each filter (null means "All")
   const [filters, setFilters] = useState({
     genre: null,
     year: null,
     department: null,
   });
 
-  // Which filter sheet is open ('genre', 'year', 'department', or null)
   const [openFilter, setOpenFilter] = useState(null);
 
-  // Gets every different value of a field, like all genres, sorted
-  const uniqueValues = (key) => [...new Set(
-    key === 'genre' ? films.flatMap((f) => f.genres ?? [f.genre]) : films.map((f) => f[key])
-  )].sort();
+  const searchText = query.trim().toLowerCase();
+  const isSearching = searchText.length > 0;
 
-  // Keeps only the films that match the search and all filters
+  const uniqueValues = (key) => [
+    ...new Set(
+      key === 'genre'
+        ? films.flatMap((f) => f.genres ?? [f.genre])
+        : films.map((f) => f[key])
+    ),
+  ].sort();
+
   const visibleFilms = films.filter((f) => {
-    const matchesSearch = f.title.toLowerCase().includes(query.toLowerCase());
-    const matchesGenre = filters.genre === null || (f.genres ?? [f.genre]).includes(filters.genre);
-    const matchesYear = filters.year === null || f.year === filters.year;
-    const matchesDept =
-      filters.department === null || f.department === filters.department;
+    const matchesSearch = String(f.title ?? '')
+      .trim()
+      .toLowerCase()
+      .startsWith(searchText);
 
-    return matchesSearch && matchesGenre && matchesYear && matchesDept;
+    const matchesGenre =
+      filters.genre === null ||
+      (f.genres ?? [f.genre]).includes(filters.genre);
+
+    const matchesYear =
+      filters.year === null || f.year === filters.year;
+
+    const matchesDept =
+      filters.department === null ||
+      f.department === filters.department;
+
+    return (
+      matchesSearch &&
+      matchesGenre &&
+      matchesYear &&
+      matchesDept
+    );
   });
 
-  // Builds each row with its matching films, using the tags from films.js
   const sections = rows.map((row) => ({
     ...row,
-    films: visibleFilms.filter((f) => (f.tags ?? []).includes(row.id)),
+    films: visibleFilms.filter((f) =>
+      (f.tags ?? []).includes(row.id)
+    ),
   }));
 
-  // Adds the automatic "All films" row at the end
-  sections.push({ id: 'all', title: 'All Films', films: visibleFilms });
+  sections.push({
+    id: 'all',
+    title: 'All Films',
+    films: visibleFilms,
+  });
 
-  // Hides any row that has no films
-  const visibleSections = sections.filter((s) => s.films.length > 0);
+  const visibleSections = sections.filter(
+    (section) => section.films.length > 0
+  );
 
-  // Opens the details screen and sends this film's id
-  const openFilm = (film) =>
-    navigation.navigate('FilmDetails', { filmId: film.id });
+  const openFilm = (film) => {
+    navigation.navigate('FilmDetails', {
+      filmId: film.id,
+    });
+  };
 
   return (
-    // A plain View now, the top space comes from layout.topPadding in theme.js
     <View style={styles.screen}>
-
-      {/* App name: "Sine" in white, "Kampus" in green */}
       <Text style={styles.logo}>
         Sine<Text style={styles.logoAccent}>Kampus</Text>
       </Text>
 
-      {/* Search bar */}
       <View style={styles.search}>
         <Ionicons
           name="search"
@@ -83,10 +119,11 @@ export default function HomeScreen({ navigation, favoriteIds, toggleFavorite, fi
           placeholderTextColor={colors.textMuted}
           value={query}
           onChangeText={setQuery}
+          autoCapitalize="none"
+          autoCorrect={false}
         />
       </View>
 
-      {/* Filter chips: centered together in the middle of the screen */}
       <View style={styles.chips}>
         {FILTERS.map((f) => {
           const value = filters[f.key];
@@ -95,10 +132,12 @@ export default function HomeScreen({ navigation, favoriteIds, toggleFavorite, fi
           return (
             <Pressable
               key={f.key}
-              style={[styles.chip, active && styles.chipActive]}
+              style={[
+                styles.chip,
+                active && styles.chipActive,
+              ]}
               onPress={() => setOpenFilter(f.key)}
             >
-              {/* Shows the chosen value, or the filter name if none */}
               <Text style={styles.chipText}>
                 {active ? String(value) : f.label}
               </Text>
@@ -113,61 +152,102 @@ export default function HomeScreen({ navigation, favoriteIds, toggleFavorite, fi
         })}
       </View>
 
-      {/* The page scrolls down, and each row scrolls sideways */}
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         {loading && films.length === 0 && (
-          <ActivityIndicator color={colors.accentLight} style={styles.status} />
+          <ActivityIndicator
+            color={colors.accentLight}
+            style={styles.status}
+          />
         )}
 
         {error && films.length === 0 && (
           <View style={styles.status}>
-            <Text style={styles.empty}>Films could not be loaded. {error}</Text>
-            <Pressable style={styles.retryButton} onPress={onRetry}>
-              <Text style={styles.retryText}>Try again</Text>
+            <Text style={styles.empty}>
+              Films could not be loaded. {error}
+            </Text>
+
+            <Pressable
+              style={styles.retryButton}
+              onPress={onRetry}
+            >
+              <Text style={styles.retryText}>
+                Try again
+              </Text>
             </Pressable>
           </View>
         )}
 
-        {visibleSections.map((section) => (
-          <FilmRow
-            key={section.id}
-            title={section.title}
-            films={section.films}
-            favoriteIds={favoriteIds}
-            onOpen={openFilm}
-            onToggleFavorite={toggleFavorite}
-          />
-        ))}
-
-        {/* Shown when no film matches the search or filters */}
-        {!loading && !error && visibleFilms.length === 0 && (
-          <Text style={styles.empty}>
-            No films found. Try another search.
-          </Text>
+        {isSearching ? (
+          <View style={styles.searchResults}>
+            {visibleFilms.map((film) => (
+              <View
+                key={film.id}
+                style={styles.searchResultRow}
+              >
+                <View style={styles.searchResultCard}>
+                  <FilmCard
+                    film={film}
+                    isFavorite={favoriteIds.includes(film.id)}
+                    onPress={() => openFilm(film)}
+                    onToggleFavorite={() =>
+                      toggleFavorite(film.id)
+                    }
+                  />
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : (
+          visibleSections.map((section) => (
+            <FilmRow
+              key={section.id}
+              title={section.title}
+              films={section.films}
+              favoriteIds={favoriteIds}
+              onOpen={openFilm}
+              onToggleFavorite={toggleFavorite}
+            />
+          ))
         )}
+
+        {!loading &&
+          !error &&
+          visibleFilms.length === 0 && (
+            <Text style={styles.empty}>
+              No films found. Try another search.
+            </Text>
+          )}
       </ScrollView>
 
-      {/* The bottom sheet, shown when a chip is tapped */}
       <FilterSheet
         visible={openFilter !== null}
-        title={FILTERS.find((f) => f.key === openFilter)?.label ?? ''}
-        options={openFilter ? uniqueValues(openFilter) : []}
-        selected={openFilter ? filters[openFilter] : null}
+        title={
+          FILTERS.find((f) => f.key === openFilter)?.label ?? ''
+        }
+        options={
+          openFilter ? uniqueValues(openFilter) : []
+        }
+        selected={
+          openFilter ? filters[openFilter] : null
+        }
         onSelect={(value) => {
-          // Saves the choice for the open filter, then closes the sheet
-          setFilters({ ...filters, [openFilter]: value });
+          setFilters({
+            ...filters,
+            [openFilter]: value,
+          });
           setOpenFilter(null);
         }}
         onClose={() => setOpenFilter(null)}
       />
-
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-
-  // paddingTop is the space above the logo, change it in theme.js
   screen: {
     flex: 1,
     backgroundColor: colors.background,
@@ -205,13 +285,10 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
 
-
-  //filter buttons//collumn
-  //  all three filter buttons as one group
   chips: {
     flexDirection: 'row',
-    justifyContent: 'left',
-    alignItems: 'left',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -219,7 +296,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
 
-  // Individual filter button
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -232,7 +308,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
 
-  // Selected filter button
   chipActive: {
     backgroundColor: colors.accent,
     borderColor: colors.accent,
@@ -244,10 +319,25 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
 
-  // Space at the bottom so the last row isn't hidden by the tabs
   content: {
     paddingTop: 8,
-    paddingBottom: 20,
+    paddingBottom: 110,
+  },
+
+  searchResults: {
+    width: '100%',
+    paddingHorizontal: 10,
+    gap: 24,
+  },
+
+  searchResultRow: {
+    width: '100%',
+    flexDirection: 'row',
+    paddingHorizontal: 6,
+  },
+
+  searchResultCard: {
+    width: '50%',
   },
 
   empty: {
@@ -255,10 +345,25 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     marginTop: 40,
+    paddingHorizontal: 20,
   },
 
-  status: { marginTop: 36, alignItems: 'center', paddingHorizontal: 24 },
-  retryButton: { backgroundColor: colors.accent, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 10, marginTop: 14 },
-  retryText: { fontFamily: fonts.bodyBold, color: colors.text },
+  status: {
+    marginTop: 36,
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
 
+  retryButton: {
+    backgroundColor: colors.accent,
+    borderRadius: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    marginTop: 14,
+  },
+
+  retryText: {
+    fontFamily: fonts.bodyBold,
+    color: colors.text,
+  },
 });

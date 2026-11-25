@@ -1,168 +1,527 @@
+
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, View, Text, Image, Pressable, ScrollView, Alert, StyleSheet, useWindowDimensions } from 'react-native';
+import {
+  ActivityIndicator,
+  View,
+  Text,
+  Image,
+  ImageBackground,
+  Pressable,
+  ScrollView,
+  Alert,
+  StyleSheet,
+  useWindowDimensions,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from '../theme';
 import { getFilm } from '../api/films';
 import FacebookVideoModal from '../components/FacebookVideoModal';
 
-// Receives route (has the film id) plus the favorites props from App.js
-export default function FilmDetailsScreen({ route, favoriteIds, toggleFavorite, films }) {
-  // The phone's screen width, so the poster size adapts to any phone
+const departmentIcons = {
+  'College of Criminal Justice and Sciences': 'shield-checkmark-outline',
+  'College of Nursing': 'medkit-outline',
+  'College of Engineering and Architecture': 'construct-outline',
+  'College of Management': 'briefcase-outline',
+  'College of Education': 'school-outline',
+  'College of Agriculture and Technology': 'leaf-outline',
+  'College of Computing and Information Sciences': 'laptop-outline',
+};
+
+export default function FilmDetailsScreen({
+  route,
+  favoriteIds,
+  toggleFavorite,
+  films,
+}) {
   const { width } = useWindowDimensions();
 
-  // TODO (SineKampus): change 0.42 to make the poster bigger or smaller
-  const posterWidth = width * 0.42;
-  // Height is 1.5 times the width, which keeps the 2:3 poster shape
-  const posterHeight = posterWidth * 1.5;
+  const posterWidth = width * 0.48;
 
-  const cachedFilm = films.find((f) => f.id === route.params.filmId);
+  const cachedFilm = films.find(
+    (f) => f.id === route.params.filmId
+  );
+
   const [film, setFilm] = useState(cachedFilm ?? null);
   const [loading, setLoading] = useState(!cachedFilm);
   const [error, setError] = useState(null);
   const [playerVisible, setPlayerVisible] = useState(false);
+  const [loadedPosterRatio, setLoadedPosterRatio] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
+
     getFilm(route.params.filmId, controller.signal)
-      .then(setFilm)
+      .then((loadedFilm) => {
+        if (!controller.signal.aborted) {
+          setFilm(loadedFilm);
+          setError(null);
+        }
+      })
       .catch((requestError) => {
-        if (requestError.name !== 'AbortError') setError(requestError.message);
+        if (
+          requestError.name !== 'AbortError' &&
+          !controller.signal.aborted
+        ) {
+          setError(requestError.message);
+        }
       })
       .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       });
+
     return () => controller.abort();
   }, [cachedFilm, route.params.filmId]);
 
   if (loading && !film) {
-    return <View style={styles.screen}><ActivityIndicator color={colors.accentLight} style={styles.loading} /></View>;
-  }
-
-  // Shows a message instead of crashing if the film id isn't found
-  if (!film) {
     return (
       <View style={styles.screen}>
-        <Text style={styles.missing}>{error ?? 'Film not found.'}</Text>
+        <ActivityIndicator
+          color={colors.accentLight}
+          style={styles.loading}
+        />
       </View>
     );
   }
 
-  // True if this film is in the favorites list
+  if (!film) {
+    return (
+      <View style={styles.screen}>
+        <Text style={styles.missing}>
+          {error ?? 'Film not found.'}
+        </Text>
+      </View>
+    );
+  }
+
   const isFavorite = favoriteIds.includes(film.id);
 
-  // Opens the official Facebook embedded player, or shows a message if there is no URL.
+  const genre = Array.isArray(film.genres)
+    ? film.genres.join(', ')
+    : film.genre;
+
+  const departmentIcon =
+    departmentIcons[film.department] ?? 'school-outline';
+
+  const posterAspectRatio = loadedPosterRatio ?? 2 / 3;
+
   const watchNow = () => {
     if (film.link) {
       setPlayerVisible(true);
     } else {
-      Alert.alert('Coming soon', 'No link has been added for this film yet.');
+      Alert.alert(
+        'Coming soon',
+        'No link has been added for this film yet.'
+      );
     }
   };
 
   return (
-    // ScrollView lets the page scroll if the description is long
     <>
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      {/* Poster with a fixed pixel size, or the dark fallback box when poster is null */}
-      {film.poster ? (
-        <Image
-          source={film.poster}
-          style={{ width: posterWidth, height: posterHeight, borderRadius: 14 }}
-          resizeMode="cover"
+      <View style={styles.screen}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.content}
+        >
+          <ImageBackground
+            source={require('../../assets/images/movie-details-bg.png')}
+            style={[styles.heroBackground, { width }]}
+            resizeMode="cover"
+          >
+            <View style={styles.backdropOverlay} />
+
+            <LinearGradient
+              colors={[
+                'rgba(11, 16, 16, 0)',
+                'rgba(11, 16, 16, 0.65)',
+                colors.background,
+              ]}
+              locations={[0, 0.55, 1]}
+              style={styles.bottomFade}
+              pointerEvents="none"
+            />
+
+            <View style={styles.hero}>
+              {film.poster ? (
+                <View
+                  style={[
+                    styles.posterContainer,
+                    {
+                      width: posterWidth,
+                      aspectRatio: posterAspectRatio,
+                    },
+                  ]}
+                >
+                  <Image
+                    source={film.poster}
+                    style={styles.poster}
+                    resizeMode="contain"
+                    onLoad={({ nativeEvent }) => {
+                      const {
+                        width: imageWidth,
+                        height: imageHeight,
+                      } = nativeEvent.source;
+
+                      if (imageWidth && imageHeight) {
+                        setLoadedPosterRatio(
+                          imageWidth / imageHeight
+                        );
+                      }
+                    }}
+                  />
+                </View>
+              ) : (
+                <View
+                  style={[
+                    styles.fallback,
+                    {
+                      width: posterWidth,
+                      aspectRatio: posterAspectRatio,
+                    },
+                  ]}
+                >
+                  <Text style={styles.fallbackText}>
+                    {film.title}
+                  </Text>
+                </View>
+              )}
+
+              <Text style={styles.title}>
+                {film.title}
+              </Text>
+
+              <View style={styles.movieMeta}>
+                {genre ? (
+                  <Text style={styles.genre}>
+                    {genre}
+                  </Text>
+                ) : null}
+
+                {genre && film.year ? (
+                  <Text style={styles.metaSeparator}>•</Text>
+                ) : null}
+
+                {film.year ? (
+                  <Text style={styles.year}>
+                    {film.year}
+                  </Text>
+                ) : null}
+              </View>
+
+              {film.department ? (
+                <View style={styles.department}>
+                  <Ionicons
+                    name={departmentIcon}
+                    size={17}
+                    color={colors.accentLight}
+                  />
+                  <Text style={styles.departmentText}>
+                    {film.department}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+
+            <View style={styles.buttons}>
+              <Pressable
+                style={styles.watchButton}
+                onPress={watchNow}
+              >
+                <Ionicons
+                  name="play"
+                  size={17}
+                  color={colors.text}
+                />
+                <Text style={styles.watchText}>
+                  Watch Now
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.heartButton}
+                onPress={() => toggleFavorite(film.id)}
+              >
+                <Ionicons
+                  name={isFavorite ? 'heart' : 'heart-outline'}
+                  size={24}
+                  color={
+                    isFavorite
+                      ? colors.accentLight
+                      : colors.text
+                  }
+                />
+              </Pressable>
+            </View>
+          </ImageBackground>
+
+          {film.description ? (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>
+                Synopsis
+              </Text>
+
+              <Text style={styles.description}>
+                {film.description}
+              </Text>
+            </View>
+          ) : null}
+
+          <View style={styles.infoSection}>
+            <Text style={styles.sectionTitle}>
+              Movie Information
+            </Text>
+
+            {genre ? (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>
+                  Genre
+                </Text>
+                <Text style={styles.infoValue}>
+                  {genre}
+                </Text>
+              </View>
+            ) : null}
+
+            {film.year ? (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>
+                  Release Year
+                </Text>
+                <Text style={styles.infoValue}>
+                  {film.year}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        </ScrollView>
+      </View>
+
+      {playerVisible && (
+        <FacebookVideoModal
+          visible
+          videoUrl={film.link}
+          onClose={() => setPlayerVisible(false)}
         />
-      ) : (
-        <View style={[styles.fallback, { width: posterWidth, height: posterHeight }]}>
-          <Text style={styles.fallbackText}>{film.title}</Text>
-        </View>
       )}
-
-      {/* Film title in the serif font */}
-      <Text style={styles.title}>{film.title}</Text>
-
-      {/* Genre, year, and department shown as small pills */}
-      <View style={styles.tags}>
-        <Text style={styles.tag}>{film.genre}</Text>
-        <Text style={styles.tag}>{film.year}</Text>
-        <Text style={styles.tag}>{film.department}</Text>
-      </View>
-
-      {/* Buttons row: Watch now takes the space, the heart sits beside it */}
-      <View style={styles.buttons}>
-        <Pressable style={styles.watchButton} onPress={watchNow}>
-          <Ionicons name="play" size={18} color={colors.text} />
-          <Text style={styles.watchText}>Watch now</Text>
-        </Pressable>
-
-        {/* Heart icon button, filled and green when favorited */}
-        <Pressable style={styles.heartButton} onPress={() => toggleFavorite(film.id)}>
-          <Ionicons
-            name={isFavorite ? 'heart' : 'heart-outline'}
-            size={24}
-            color={isFavorite ? colors.accentLight : colors.text}
-          />
-        </Pressable>
-      </View>
-
-      {/* Description shows only if the film has one */}
-      {film.description ? <Text style={styles.description}>{film.description}</Text> : null}
-    </ScrollView>
-    {playerVisible && (
-      <FacebookVideoModal
-        visible
-        videoUrl={film.link}
-        onClose={() => setPlayerVisible(false)}
-      />
-    )}
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
-  // alignItems centers everything horizontally
-  content: { alignItems: 'center', padding: 20, paddingBottom: 40 },
-  missing: { fontFamily: fonts.body, color: colors.textMuted, textAlign: 'center', marginTop: 60 },
-  loading: { marginTop: 60 },
-  fallback: { backgroundColor: colors.surface, borderRadius: 14, justifyContent: 'center', alignItems: 'center', padding: 12 },
-  fallbackText: { fontFamily: fonts.title, fontSize: 18, color: colors.text, textAlign: 'center' },
-  title: { fontFamily: fonts.title, fontSize: 26, color: colors.text, textAlign: 'center', marginTop: 20 },
-  // flexWrap moves pills to the next line if they don't fit
-  tags: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 14 },
-  tag: {
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+
+  content: {
+    paddingBottom: 60,
+  },
+
+  loading: {
+    flex: 1,
+  },
+
+  missing: {
+    color: colors.text,
     fontFamily: fonts.body,
-    fontSize: 13,
-    color: colors.textMuted,
-    backgroundColor: colors.surface,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
+    textAlign: 'center',
+    marginTop: 40,
+  },
+
+  heroBackground: {
+    alignSelf: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 80,
+    paddingBottom: 28,
     overflow: 'hidden',
   },
-  // Row with Watch now and the heart, stretches to the full width
-  buttons: { flexDirection: 'row', gap: 10, width: '100%', marginTop: 24 },
-  // flex: 1 makes the Watch now button take all the leftover space
+
+  backdropOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(12, 8, 12, 0.48)',
+  },
+
+  bottomFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 170,
+  },
+
+  hero: {
+    width: '100%',
+    alignItems: 'center',
+  },
+
+  posterContainer: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+
+  poster: {
+    width: '100%',
+    height: '100%',
+  },
+
+  fallback: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+  },
+
+  fallbackText: {
+    color: colors.text,
+    fontFamily: fonts.title,
+    textAlign: 'center',
+  },
+
+  title: {
+    color: colors.text,
+    fontFamily: fonts.title,
+    fontSize: 28,
+    textAlign: 'center',
+    marginTop: 20,
+  },
+
+  movieMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    marginTop: 10,
+    gap: 8,
+  },
+
+  genre: {
+    color: colors.text,
+    fontFamily: fonts.body,
+    fontSize: 13,
+    textAlign: 'center',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+
+  metaSeparator: {
+    color: colors.textMuted,
+    fontSize: 14,
+  },
+
+  year: {
+    color: colors.text,
+    fontFamily: fonts.body,
+    fontSize: 13,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+
+  department: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 12,
+    paddingHorizontal: 8,
+  },
+
+  departmentText: {
+    color: colors.textMuted,
+    fontFamily: fonts.body,
+    fontSize: 13,
+    textAlign: 'center',
+    flexShrink: 1,
+  },
+
+  buttons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    marginTop: 22,
+    width: '100%',
+  },
+
   watchButton: {
     flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
+    height: 50,
     backgroundColor: colors.accent,
-    height: 48,
-    borderRadius: 12,
-  },
-  watchText: { fontFamily: fonts.bodyBold, fontSize: 15, color: colors.text },
-  // Square heart button, same height as Watch now
-  heartButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
+    borderRadius: 10,
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 0.5,
-    borderColor: colors.border,
+    justifyContent: 'center',
+    gap: 10,
   },
-  // Text under the buttons, left aligned for easier reading
-  description: { fontFamily: fonts.body, fontSize: 15, lineHeight: 22, color: colors.textMuted, marginTop: 24, width: '100%' },
+
+  watchText: {
+    color: colors.text,
+    fontFamily: fonts.bodyBold,
+    fontSize: 15,
+  },
+
+  heartButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  section: {
+    width: '100%',
+    paddingHorizontal: 24,
+    marginTop: 26,
+  },
+
+  infoSection: {
+    width: '100%',
+    paddingHorizontal: 24,
+    marginTop: 42,
+  },
+
+  sectionTitle: {
+    color: colors.text,
+    fontFamily: fonts.title,
+    fontSize: 21,
+    marginBottom: 14,
+  },
+
+  description: {
+    color: colors.textMuted,
+    fontFamily: fonts.body,
+    fontSize: 14,
+    lineHeight: 23,
+  },
+
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: 5,
+    gap: 16,
+  },
+
+  infoLabel: {
+    color: colors.textMuted,
+    fontFamily: fonts.body,
+    fontSize: 14,
+  },
+
+  infoValue: {
+    color: colors.text,
+    fontFamily: fonts.body,
+    fontSize: 14,
+    flex: 1,
+    textAlign: 'right',
+  },
 });
